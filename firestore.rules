@@ -1,0 +1,410 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidUserPublic(data) {
+      return data.keys().hasAll([
+        'uid', 'displayName', 'username', 'avatarUrl', 'bannerColor',
+        'bio', 'customStatus', 'presence', 'e2eePublicKey',
+        'e2eeFingerprint', 'twoFactorEnabled', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'displayName', 'username', 'avatarUrl', 'bannerColor', 'bannerUrl',
+        'bio', 'customStatus', 'presence', 'e2eePublicKey',
+        'e2eeFingerprint', 'twoFactorEnabled', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.uid) &&
+      data.uid == request.auth.uid &&
+      data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60 &&
+      data.username is string && data.username.size() >= 2 && data.username.size() <= 40 &&
+      data.avatarUrl is string && data.avatarUrl.size() <= 150000 &&
+      data.bannerColor is string && data.bannerColor.size() >= 4 && data.bannerColor.size() <= 30 &&
+      (!('bannerUrl' in data) || (data.bannerUrl is string && data.bannerUrl.size() <= 150000)) &&
+      data.bio is string && data.bio.size() <= 300 &&
+      data.customStatus is string && data.customStatus.size() <= 100 &&
+      data.presence is string && data.presence in ['online', 'idle', 'dnd', 'offline'] &&
+      data.e2eePublicKey is string && data.e2eePublicKey.size() >= 10 && data.e2eePublicKey.size() <= 500 &&
+      data.e2eeFingerprint is string && data.e2eeFingerprint.size() >= 10 && data.e2eeFingerprint.size() <= 128 &&
+      data.twoFactorEnabled is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivate(data) {
+      return data.keys().hasAll([
+        'uid', 'email', 'totpSecret', 'twoFactorVerified',
+        'recoveryHash', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'email', 'totpSecret', 'twoFactorVerified',
+        'recoveryHash', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.uid) &&
+      data.uid == request.auth.uid &&
+      data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+      data.totpSecret is string && data.totpSecret.size() >= 8 && data.totpSecret.size() <= 128 &&
+      data.twoFactorVerified is bool &&
+      data.recoveryHash is string && data.recoveryHash.size() >= 8 && data.recoveryHash.size() <= 128 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidServer(data) {
+      return data.keys().hasAll([
+        'id', 'name', 'description', 'iconText', 'bannerUrl',
+        'ownerId', 'inviteCode', 'isPublic', 'e2eeKeyId',
+        'botAutoMod', 'botWelcome', 'botAntiRaid', 'botSlowmodeSeconds',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'name', 'description', 'iconText', 'bannerUrl',
+        'ownerId', 'inviteCode', 'isPublic', 'e2eeKeyId',
+        'botAutoMod', 'botWelcome', 'botAntiRaid', 'botSlowmodeSeconds',
+        'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.id) &&
+      data.name is string && data.name.size() >= 2 && data.name.size() <= 80 &&
+      data.description is string && data.description.size() <= 300 &&
+      data.iconText is string && data.iconText.size() >= 1 && data.iconText.size() <= 10 &&
+      data.bannerUrl is string && data.bannerUrl.size() <= 150000 &&
+      isValidId(data.ownerId) &&
+      data.ownerId == request.auth.uid &&
+      data.inviteCode is string && data.inviteCode.size() >= 4 && data.inviteCode.size() <= 32 &&
+      data.isPublic is bool &&
+      data.e2eeKeyId is string && data.e2eeKeyId.size() >= 4 && data.e2eeKeyId.size() <= 128 &&
+      data.botAutoMod is bool &&
+      data.botWelcome is bool &&
+      data.botAntiRaid is bool &&
+      data.botSlowmodeSeconds is int && data.botSlowmodeSeconds >= 0 && data.botSlowmodeSeconds <= 3600 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidChannel(data) {
+      return data.keys().hasAll([
+        'id', 'serverId', 'name', 'category', 'type',
+        'topic', 'isLocked', 'ownerId', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'serverId', 'name', 'category', 'type',
+        'topic', 'isLocked', 'ownerId', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.id) &&
+      isValidId(data.serverId) &&
+      data.name is string && data.name.size() >= 1 && data.name.size() <= 60 &&
+      data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+      data.type is string && data.type in ['text', 'voice', 'video'] &&
+      data.topic is string && data.topic.size() <= 200 &&
+      data.isLocked is bool &&
+      isValidId(data.ownerId) &&
+      data.ownerId == request.auth.uid &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll([
+        'id', 'serverId', 'channelId', 'authorId', 'authorName',
+        'authorAvatar', 'authorRole', 'ciphertext', 'iv', 'signature',
+        'isEncrypted', 'isPinned', 'isFlaggedByBot', 'botModerationNote',
+        'replyToId', 'replyToAuthor', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'serverId', 'channelId', 'authorId', 'authorName',
+        'authorAvatar', 'authorRole', 'ciphertext', 'iv', 'signature',
+        'isEncrypted', 'isPinned', 'isFlaggedByBot', 'botModerationNote',
+        'replyToId', 'replyToAuthor', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.id) &&
+      isValidId(data.serverId) &&
+      isValidId(data.channelId) &&
+      isValidId(data.authorId) &&
+      data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 80 &&
+      data.authorAvatar is string && data.authorAvatar.size() <= 150000 &&
+      data.authorRole is string && data.authorRole in ['admin', 'moderator', 'member', 'bot'] &&
+      data.ciphertext is string && data.ciphertext.size() >= 1 && data.ciphertext.size() <= 4000 &&
+      data.iv is string && data.iv.size() >= 8 && data.iv.size() <= 64 &&
+      data.signature is string && data.signature.size() >= 8 && data.signature.size() <= 128 &&
+      data.isEncrypted is bool &&
+      data.isPinned is bool &&
+      data.isFlaggedByBot is bool &&
+      data.botModerationNote is string && data.botModerationNote.size() <= 300 &&
+      data.replyToId is string && data.replyToId.size() <= 128 &&
+      data.replyToAuthor is string && data.replyToAuthor.size() <= 80 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidFriendship(data) {
+      return data.keys().hasAll([
+        'id', 'requesterId', 'requesterName', 'requesterAvatar',
+        'recipientId', 'recipientName', 'recipientAvatar',
+        'status', 'e2eeChannelFingerprint', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'requesterId', 'requesterName', 'requesterAvatar',
+        'recipientId', 'recipientName', 'recipientAvatar',
+        'status', 'e2eeChannelFingerprint', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.id) &&
+      isValidId(data.requesterId) &&
+      data.requesterName is string && data.requesterName.size() >= 1 && data.requesterName.size() <= 80 &&
+      data.requesterAvatar is string && data.requesterAvatar.size() <= 150000 &&
+      isValidId(data.recipientId) &&
+      data.recipientName is string && data.recipientName.size() >= 1 && data.recipientName.size() <= 80 &&
+      data.recipientAvatar is string && data.recipientAvatar.size() <= 150000 &&
+      data.status is string && data.status in ['pending', 'accepted', 'blocked'] &&
+      data.e2eeChannelFingerprint is string && data.e2eeChannelFingerprint.size() >= 10 && data.e2eeChannelFingerprint.size() <= 128 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidDirectMessage(data) {
+      return data.keys().hasAll([
+        'id', 'friendshipId', 'senderId', 'senderName',
+        'recipientId', 'ciphertext', 'iv', 'signature', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'friendshipId', 'senderId', 'senderName',
+        'recipientId', 'ciphertext', 'iv', 'signature', 'createdAt'
+      ]) &&
+      isValidId(data.id) &&
+      isValidId(data.friendshipId) &&
+      isValidId(data.senderId) &&
+      data.senderId == request.auth.uid &&
+      data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 80 &&
+      isValidId(data.recipientId) &&
+      data.ciphertext is string && data.ciphertext.size() >= 1 && data.ciphertext.size() <= 4000 &&
+      data.iv is string && data.iv.size() >= 8 && data.iv.size() <= 64 &&
+      data.signature is string && data.signature.size() >= 8 && data.signature.size() <= 128 &&
+      data.createdAt is timestamp;
+    }
+
+    // 4. Collection Match Blocks
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn() && existing().presence in ['online', 'idle', 'dnd', 'offline'];
+      allow create: if isVerified() && isValidId(userId) && isValidUserPublic(incoming()) &&
+        request.auth.uid == userId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() && isValidUserPublic(incoming()) && isValidId(userId) &&
+        request.auth.uid == userId &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName', 'username', 'avatarUrl', 'bannerColor', 'bannerUrl', 'bio',
+          'customStatus', 'presence', 'e2eePublicKey', 'e2eeFingerprint',
+          'twoFactorEnabled', 'updatedAt'
+        ]);
+      allow delete: if false;
+
+      match /private/{docId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(docId) &&
+          request.auth.uid == userId &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow list: if false;
+        allow create: if isVerified() && isValidId(userId) && isValidId(docId) &&
+          isValidUserPrivate(incoming()) &&
+          request.auth.uid == userId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isVerified() && isValidUserPrivate(incoming()) &&
+          isValidId(userId) && isValidId(docId) &&
+          request.auth.uid == userId &&
+          incoming().uid == existing().uid &&
+          incoming().email == existing().email &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/users/$(userId)) &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'totpSecret', 'twoFactorVerified', 'recoveryHash', 'updatedAt'
+          ]);
+        allow delete: if false;
+      }
+    }
+
+    match /servers/{serverId} {
+      allow get: if isSignedIn() && isValidId(serverId) &&
+        (existing().isPublic == true || existing().ownerId == request.auth.uid);
+      allow list: if isSignedIn() &&
+        (existing().isPublic == true || existing().ownerId == request.auth.uid);
+      allow create: if isVerified() && isValidId(serverId) && isValidServer(incoming()) &&
+        incoming().id == serverId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      allow update: if isVerified() && isValidServer(incoming()) && isValidId(serverId) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().id == existing().id &&
+        incoming().e2eeKeyId == existing().e2eeKeyId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'description', 'iconText', 'bannerUrl', 'inviteCode',
+          'isPublic', 'botAutoMod', 'botWelcome', 'botAntiRaid',
+          'botSlowmodeSeconds', 'updatedAt'
+        ]);
+      allow delete: if isVerified() && isValidId(serverId) &&
+        existing().ownerId == request.auth.uid;
+
+      match /channels/{channelId} {
+        allow get: if isSignedIn() && isValidId(serverId) && isValidId(channelId) &&
+          exists(/databases/$(database)/documents/servers/$(serverId));
+        allow list: if isSignedIn() && existing().serverId == serverId;
+        allow create: if isVerified() && isValidId(serverId) && isValidId(channelId) &&
+          isValidChannel(incoming()) &&
+          incoming().id == channelId &&
+          incoming().serverId == serverId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid;
+        allow update: if isVerified() && isValidChannel(incoming()) &&
+          isValidId(serverId) && isValidId(channelId) &&
+          existing().ownerId == request.auth.uid &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().id == existing().id &&
+          incoming().serverId == existing().serverId &&
+          incoming().type == existing().type &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'category', 'topic', 'isLocked', 'updatedAt'
+          ]);
+        allow delete: if isVerified() && isValidId(serverId) && isValidId(channelId) &&
+          existing().ownerId == request.auth.uid &&
+          get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid;
+      }
+
+      match /messages/{messageId} {
+        allow get: if isSignedIn() && isValidId(serverId) && isValidId(messageId) &&
+          exists(/databases/$(database)/documents/servers/$(serverId));
+        allow list: if isSignedIn() && existing().serverId == serverId;
+        allow create: if isVerified() && isValidId(serverId) && isValidId(messageId) &&
+          isValidMessage(incoming()) &&
+          incoming().id == messageId &&
+          incoming().serverId == serverId &&
+          incoming().authorId == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/servers/$(serverId));
+        allow update: if isVerified() && isValidMessage(incoming()) &&
+          isValidId(serverId) && isValidId(messageId) &&
+          incoming().id == existing().id &&
+          incoming().serverId == existing().serverId &&
+          incoming().channelId == existing().channelId &&
+          incoming().authorId == existing().authorId &&
+          incoming().authorName == existing().authorName &&
+          incoming().authorAvatar == existing().authorAvatar &&
+          incoming().authorRole == existing().authorRole &&
+          incoming().isEncrypted == existing().isEncrypted &&
+          incoming().replyToId == existing().replyToId &&
+          incoming().replyToAuthor == existing().replyToAuthor &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/servers/$(serverId)) &&
+          (
+            (
+              existing().authorId == request.auth.uid &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['ciphertext', 'iv', 'signature', 'isPinned', 'updatedAt'])
+            ) ||
+            (
+              get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['isPinned', 'isFlaggedByBot', 'botModerationNote', 'updatedAt'])
+            )
+          );
+        allow delete: if isVerified() && isValidId(serverId) && isValidId(messageId) &&
+          exists(/databases/$(database)/documents/servers/$(serverId)) &&
+          (
+            existing().authorId == request.auth.uid ||
+            get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid
+          );
+      }
+    }
+
+    match /friendships/{friendshipId} {
+      allow get: if isSignedIn() && isValidId(friendshipId) &&
+        (existing().requesterId == request.auth.uid || existing().recipientId == request.auth.uid);
+      allow list: if isSignedIn() &&
+        (existing().requesterId == request.auth.uid || existing().recipientId == request.auth.uid);
+      allow create: if isVerified() && isValidId(friendshipId) && isValidFriendship(incoming()) &&
+        incoming().id == friendshipId &&
+        incoming().requesterId == request.auth.uid &&
+        incoming().requesterId != incoming().recipientId &&
+        incoming().status == 'pending' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/users/$(incoming().recipientId));
+      allow update: if isVerified() && isValidFriendship(incoming()) && isValidId(friendshipId) &&
+        existing().status != 'blocked' &&
+        incoming().id == existing().id &&
+        incoming().requesterId == existing().requesterId &&
+        incoming().requesterName == existing().requesterName &&
+        incoming().requesterAvatar == existing().requesterAvatar &&
+        incoming().recipientId == existing().recipientId &&
+        incoming().recipientName == existing().recipientName &&
+        incoming().recipientAvatar == existing().recipientAvatar &&
+        incoming().e2eeChannelFingerprint == existing().e2eeChannelFingerprint &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            existing().recipientId == request.auth.uid &&
+            incoming().status in ['accepted', 'blocked'] &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          ) ||
+          (
+            existing().requesterId == request.auth.uid &&
+            incoming().status == 'blocked' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          )
+        );
+      allow delete: if isVerified() && isValidId(friendshipId) &&
+        (existing().requesterId == request.auth.uid || existing().recipientId == request.auth.uid);
+    }
+
+    match /directMessages/{dmId} {
+      allow get: if isSignedIn() && isValidId(dmId) &&
+        (existing().senderId == request.auth.uid || existing().recipientId == request.auth.uid);
+      allow list: if isSignedIn() &&
+        (existing().senderId == request.auth.uid || existing().recipientId == request.auth.uid);
+      allow create: if isVerified() && isValidId(dmId) && isValidDirectMessage(incoming()) &&
+        incoming().id == dmId &&
+        incoming().createdAt == request.time &&
+        exists(/databases/$(database)/documents/friendships/$(incoming().friendshipId));
+      allow update: if false;
+      allow delete: if isVerified() && isValidId(dmId) &&
+        existing().senderId == request.auth.uid;
+    }
+  }
+}

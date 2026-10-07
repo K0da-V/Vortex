@@ -1,0 +1,567 @@
+{
+  "entities": {
+    "UserPublic": {
+      "title": "UserPublic",
+      "description": "Public profile information and E2EE public key metadata for a user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 60,
+          "minLength": 1
+        },
+        "username": {
+          "type": "string",
+          "maxLength": 40,
+          "minLength": 2
+        },
+        "avatarUrl": {
+          "type": "string",
+          "maxLength": 150000
+        },
+        "bannerColor": {
+          "type": "string",
+          "maxLength": 30,
+          "minLength": 4
+        },
+        "bannerUrl": {
+          "type": "string",
+          "maxLength": 150000
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "customStatus": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "presence": {
+          "type": "string",
+          "enum": ["online", "idle", "dnd", "offline"]
+        },
+        "e2eePublicKey": {
+          "type": "string",
+          "maxLength": 500,
+          "minLength": 10
+        },
+        "e2eeFingerprint": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 10
+        },
+        "twoFactorEnabled": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "username",
+        "avatarUrl",
+        "bannerColor",
+        "bio",
+        "customStatus",
+        "presence",
+        "e2eePublicKey",
+        "e2eeFingerprint",
+        "twoFactorEnabled",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserPrivate": {
+      "title": "UserPrivate",
+      "description": "Isolated PII and mandatory 2FA TOTP secrets for the user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 150,
+          "minLength": 3
+        },
+        "totpSecret": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 8
+        },
+        "twoFactorVerified": {
+          "type": "boolean"
+        },
+        "recoveryHash": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 8
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "totpSecret",
+        "twoFactorVerified",
+        "recoveryHash",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Server": {
+      "title": "Server",
+      "description": "A community server with automated bot moderation settings and E2EE key binding.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 80,
+          "minLength": 2
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "iconText": {
+          "type": "string",
+          "maxLength": 10,
+          "minLength": 1
+        },
+        "bannerUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "inviteCode": {
+          "type": "string",
+          "maxLength": 32,
+          "minLength": 4
+        },
+        "isPublic": {
+          "type": "boolean"
+        },
+        "e2eeKeyId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 4
+        },
+        "botAutoMod": {
+          "type": "boolean"
+        },
+        "botWelcome": {
+          "type": "boolean"
+        },
+        "botAntiRaid": {
+          "type": "boolean"
+        },
+        "botSlowmodeSeconds": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "iconText",
+        "bannerUrl",
+        "ownerId",
+        "inviteCode",
+        "isPublic",
+        "e2eeKeyId",
+        "botAutoMod",
+        "botWelcome",
+        "botAntiRaid",
+        "botSlowmodeSeconds",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Channel": {
+      "title": "Channel",
+      "description": "A text, voice, or video channel inside a server.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "serverId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 60,
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 60,
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "enum": ["text", "voice", "video"]
+        },
+        "topic": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "isLocked": {
+          "type": "boolean"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "serverId",
+        "name",
+        "category",
+        "type",
+        "topic",
+        "isLocked",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "An end-to-end encrypted message or automated bot moderation event in a channel.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "serverId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "channelId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorName": {
+          "type": "string",
+          "maxLength": 80,
+          "minLength": 1
+        },
+        "authorAvatar": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "authorRole": {
+          "type": "string",
+          "enum": ["admin", "moderator", "member", "bot"]
+        },
+        "ciphertext": {
+          "type": "string",
+          "maxLength": 4000,
+          "minLength": 1
+        },
+        "iv": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 8
+        },
+        "signature": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 8
+        },
+        "isEncrypted": {
+          "type": "boolean"
+        },
+        "isPinned": {
+          "type": "boolean"
+        },
+        "isFlaggedByBot": {
+          "type": "boolean"
+        },
+        "botModerationNote": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "replyToId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "replyToAuthor": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "serverId",
+        "channelId",
+        "authorId",
+        "authorName",
+        "authorAvatar",
+        "authorRole",
+        "ciphertext",
+        "iv",
+        "signature",
+        "isEncrypted",
+        "isPinned",
+        "isFlaggedByBot",
+        "botModerationNote",
+        "replyToId",
+        "replyToAuthor",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Friendship": {
+      "title": "Friendship",
+      "description": "Friend request and E2EE peer relationship between two users.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "requesterId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "requesterName": {
+          "type": "string",
+          "maxLength": 80,
+          "minLength": 1
+        },
+        "requesterAvatar": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "recipientId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "recipientName": {
+          "type": "string",
+          "maxLength": 80,
+          "minLength": 1
+        },
+        "recipientAvatar": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted", "blocked"]
+        },
+        "e2eeChannelFingerprint": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 10
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "requesterId",
+        "requesterName",
+        "requesterAvatar",
+        "recipientId",
+        "recipientName",
+        "recipientAvatar",
+        "status",
+        "e2eeChannelFingerprint",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DirectMessage": {
+      "title": "DirectMessage",
+      "description": "An immutable E2EE direct message between friends.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "friendshipId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderName": {
+          "type": "string",
+          "maxLength": 80,
+          "minLength": 1
+        },
+        "recipientId": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ciphertext": {
+          "type": "string",
+          "maxLength": 4000,
+          "minLength": 1
+        },
+        "iv": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 8
+        },
+        "signature": {
+          "type": "string",
+          "maxLength": 128,
+          "minLength": 8
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "friendshipId",
+        "senderId",
+        "senderName",
+        "recipientId",
+        "ciphertext",
+        "iv",
+        "signature",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserPublic",
+      "description": "Public profiles and E2EE public keys of platform users."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": "UserPrivate",
+      "description": "Isolated private PII (email) and TOTP 2FA secrets for a user."
+    },
+    "/servers/{serverId}": {
+      "schema": "Server",
+      "description": "Community servers and bot moderation configurations."
+    },
+    "/servers/{serverId}/channels/{channelId}": {
+      "schema": "Channel",
+      "description": "Text, voice, and video channels belonging to a server."
+    },
+    "/servers/{serverId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "End-to-end encrypted messages and bot moderation events inside a server."
+    },
+    "/friendships/{friendshipId}": {
+      "schema": "Friendship",
+      "description": "Friend relationships and pending requests between users."
+    },
+    "/directMessages/{dmId}": {
+      "schema": "DirectMessage",
+      "description": "End-to-end encrypted direct messages between friends."
+    }
+  }
+}

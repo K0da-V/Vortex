@@ -1,0 +1,6 @@
+{
+  "name": "Vortex — Comunidades Criptografadas",
+  "description": "Plataforma de comunidades em tempo real com canais de voz, vídeo, compartilhamento de tela, bots de moderação automatizados, criptografia de ponta a ponta (E2EE) e autenticação de dois fatores (2FA) obrigatória.",
+  "requestFramePermissions": ["camera", "microphone", "display-capture"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
