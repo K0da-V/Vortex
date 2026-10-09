@@ -521,6 +521,11 @@ export default function App() {
     }
   };
 
+  const handleSwitchAccount = async () => {
+    await signOut(auth);
+    await handleGoogleSignIn();
+  };
+
   const handleComplete2FA = async () => {
     if (!userPrivate || !userPublic) return;
     try {
@@ -1162,6 +1167,7 @@ export default function App() {
         userPrivate={userPrivate}
         onVerified={handleComplete2FA}
         onSignOut={() => signOut(auth)}
+        onSwitchAccount={handleSwitchAccount}
       />
     );
   }
