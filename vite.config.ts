@@ -4,19 +4,38 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  const enableHmr = process.env.ENABLE_HMR === 'true';
+
+  const disableHmrClient = {
+    name: 'disable-hmr-client',
+    enforce: 'post' as const,
+    transformIndexHtml(html: string) {
+      if (enableHmr) return html;
+
+      return html
+        .replace(
+          /<script\b[^>]*src=["']\/@vite\/client["'][^>]*><\/script>\s*/gi,
+          ''
+        )
+        .replace(
+          /<script\b[^>]*>[\s\S]*?\/@react-refresh[\s\S]*?<\/script>\s*/gi,
+          ''
+        );
+    },
+  };
+
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [disableHmrClient, react(), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, '.'),
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modify—file watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      // The embedded public Preview does not proxy Vite's HMR WebSocket.
+      // Opt in locally with ENABLE_HMR=true when a live-reload socket is available.
+      hmr: enableHmr,
+      watch: enableHmr ? {} : null,
     },
   };
 });
